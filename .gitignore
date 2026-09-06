@@ -1,0 +1,25 @@
+# Operating-system/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# Operational ECDIS logs - do not publish by accident
+*.xml
+*.zip
+!examples/synthetic_demo_log.zip
+**/CCRS/
+**/Announcement/
+**/OwnShipHistoryLog/
+**/DataLog/
+logs/
+private/
+
+# Operational print outputs
+*.pdf
+!examples/sample-output.pdf
+
+# Local test artefacts
+_test/
+_tmp/
+*.log
