@@ -1,0 +1,45 @@
+name: Publish v3.15 RC checkpoint
+
+on:
+  push:
+    paths:
+      - 'ECDIS_Log_Track_Viewer_v3.15_RC.html'
+      - '.github/workflows/publish-v315-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish latest-checkpoint alias and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp ECDIS_Log_Track_Viewer_v3.15_RC.html ECDIS_Log_Track_Viewer.html
+          {
+            sha256sum ECDIS_Log_Track_Viewer_v3.15_RC.html
+            sha256sum ECDIS_Log_Track_Viewer.html
+            echo
+            echo '# Decompressed v3.15 RC application payload SHA-256:'
+            echo '# 896c9e4b56adbf10fff8dbab576bd7e10b5873deac25582c5ccc73b122ab8f3b'
+          } > SHA256SUMS.txt
+          rm -rf tools/v315_payload
+
+      - name: Commit generated checkpoint files if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A ECDIS_Log_Track_Viewer.html SHA256SUMS.txt tools/v315_payload
+          if git diff --cached --quiet; then
+            echo 'No generated changes.'
+            exit 0
+          fi
+          git commit -m 'Publish v3.15 RC alias and checksums [skip ci]'
+          git push
