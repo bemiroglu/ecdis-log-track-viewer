@@ -2,232 +2,344 @@
 
 A single-file HTML5 viewer for selected own-ship track intervals exported from Sperry Marine VisionMaster FT ECDIS log packages.
 
-The application runs locally in the browser. It reads an exported ZIP package or an extracted log folder, converts UTC-based log timestamps to a user-selected local UTC offset, displays the selected interval on an OpenStreetMap basemap, performs basic internal consistency checks, and produces A4 landscape print/PDF output.
+**Current public development checkpoint: `v3.15 RC`**
 
-![Entry screen](assets/entry-screen.png)
+> `v3.15 RC` is intentionally published as a release candidate/checkpoint, not as a declaration that development is finished. The long-log rendering, high-resolution basemap, fallback-map and print-path work described below has reached a useful verified state, while further improvements remain deferred in `ROADMAP.md`.
 
-![Map screen](assets/map-screen.png)
+The application runs locally in the browser. It reads an exported ZIP package or an extracted log folder, treats the observed CCRS log timestamps as UTC for this workflow, converts them to a user-selected fixed UTC offset, displays the selected interval, performs internal consistency checks, and produces A4 landscape print/PDF output.
 
-A synthetic example output is available at [`examples/sample-output.pdf`](examples/sample-output.pdf). No operational vessel data is included in the repository examples.
+The viewer does **not** smooth or invent vessel positions to make a problematic log look plausible. Source coordinates remain the source coordinates; suspicious transitions may instead be marked or excluded from normal track-distance/rendering logic.
 
 ---
 
 ## English
 
-### Features
+### Download
 
-- Single HTML file; no installation or server component is required.
+- **Versioned v3.15 RC HTML:** [`ECDIS_Log_Track_Viewer_v3.15_RC.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer_v3.15_RC.html)
+- **Latest public checkpoint alias:** [`ECDIS_Log_Track_Viewer.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer.html)
+- **Release-candidate QA notes:** [`docs/QA_v3.15_RC.md`](docs/QA_v3.15_RC.md)
+- **Checksums:** [`SHA256SUMS.txt`](SHA256SUMS.txt)
+
+The versioned file is the preferred reference when results need to be reproducible. The unversioned file is only a convenience alias to the current public checkpoint.
+
+### Main capabilities
+
+- Single HTML file; no installation or local web server is required.
 - Reads the exported Sperry Marine ZIP package directly.
 - Can also read the extracted folder tree.
-- Uses CCRS log records as the primary own-ship track source.
-- Treats log timestamps as UTC and converts them to the selected fixed local UTC offset.
-- Filters the displayed track strictly to the selected local-time interval.
-- Default local time zone: `UTC+03:00` (Türkiye).
-- Default maximum plausible vessel speed for data-consistency checking: `16 kn`.
+- Uses CCRS records as the primary own-ship track source.
+- Optional OwnShipHistoryLog and Announcement packages are used when available for additional quality/event context.
+- Fixed local UTC-offset handling; default `UTC+03:00` for Türkiye.
+- Strict selected-interval clipping.
 - Speed-coloured track rendering.
-- Click/tap a track point to inspect local time, UTC log time, position, speed and heading.
+- Click/tap a sampled track point to inspect local time, UTC log time, position, speed and heading.
 - Mobile pinch zoom and desktop wheel/double-click zoom.
-- Optional OwnShipHistoryLog quality matching and Announcement event display when those sources are present.
-- Internal data-consistency guard: suspicious transitions are marked rather than smoothed into a plausible-looking route. Source coordinates are not rewritten.
 - Track distance, duration, average track speed, speed range, log-gap count and data-audit statistics.
 - Normal and dense A4 landscape print modes.
-- Start/end labels are positioned to avoid covering the plotted track.
-- Suggested PDF filename is generated from the selected local date/time interval and optional operation name.
-- Source data is processed locally in the browser. The application itself does not upload the log package to a server.
+- Start/end labels and suggested PDF filenames derived from the selected interval.
+- Browser-local log processing; the application itself does not upload the log package to a server.
+
+### Long-log performance work in v3.11–v3.15 RC
+
+The current checkpoint includes a dedicated long-log rendering path developed after multi-day datasets exposed browser limits.
+
+- Removed large-array `Math.min(...array)` / `Math.max(...array)` calls that could trigger `Maximum call stack size exceeded` on 100k+ records.
+- Statistics are calculated iteratively instead of passing very large arrays as function arguments.
+- Screen rendering uses cached `Path2D` geometry by zoom level rather than rebuilding the entire track on every pan event.
+- Pointer-move redraws are coalesced through `requestAnimationFrame`.
+- A display-only level-of-detail (LOD) layer removes visually redundant sub-pixel vertices while preserving the source CCRS records and full-data calculations.
+- Print-track rendering uses canvas/Path2D rather than constructing very large SVG path text.
+- The route remains visible even when a basemap is unavailable.
+
+The LOD layer is a **rendering optimization only**. It does not rewrite the log, smooth the track, synthesize positions or reduce the record set used for statistics/data-quality checks.
+
+### Map architecture
+
+`v3.15 RC` uses a layered basemap strategy:
+
+1. **Primary detailed basemap:** OpenFreeMap vector map rendered with MapLibre GL JS. The map data is based on OpenStreetMap/OpenMapTiles data and provides the high-resolution road/place context expected from an OSM-style map.
+2. **Offline fallback:** a lightweight embedded coastline/land context based on Natural Earth, with regional GSHHG coastline refinement for Turkish/Aegean/Black Sea waters.
+3. **Track layer:** the ECDIS track canvas is explicitly stacked above both basemap layers.
+
+The offline coastline is a continuity/fallback layer, not a replacement for the detailed online map. When OpenFreeMap loads successfully, it becomes the visible primary basemap.
+
+Map attribution in the application is retained for the active data/provider path.
+
+### Why the old direct OpenStreetMap raster-tile path was changed
+
+Earlier builds requested the standard OpenStreetMap raster tile service directly. In extended use this could return `403 Access blocked` tiles. The viewer therefore no longer depends on that volunteer-run raster endpoint as its primary application basemap.
+
+The current detailed-map path uses OpenFreeMap/MapLibre; if that online path is unavailable, the embedded coastline context remains available and the track can still be viewed and printed.
+
+### Default data-consistency speed threshold
+
+The default **Maximum plausible vessel speed** is now:
+
+`20 kn`
+
+This is a configurable integrity-screening parameter, not a vessel performance certification. It was raised from the older 16 kn default so valid high-speed/strong-current observations are not automatically treated as implausible in the present working vessel context.
 
 ### Quick start
 
-1. Open `ECDIS_Log_Track_Viewer.html` in a current Chromium-based browser such as Chrome or Edge.
+1. Open `ECDIS_Log_Track_Viewer_v3.15_RC.html` in a current Chrome/Edge/Firefox-class browser.
 2. Select the exported log ZIP with **CHOOSE ZIP**, or select its extracted directory with **CHOOSE FOLDER**.
-3. Select the local UTC offset. The default is `UTC+03:00`.
-4. Select the required **Start** and **End** times. These fields represent local wall-clock time in the selected offset.
+3. Select the local UTC offset. Default: `UTC+03:00`.
+4. Select **Start** and **End** local times.
 5. Optionally enter an operation name.
-6. Adjust marker interval or advanced options if required.
+6. Adjust marker interval or advanced data-consistency settings if required.
 7. Select **SHOW MAP**.
 8. Use **PRINT** or **DENSE PRINT** and select **A4 / Landscape** in the system print dialog.
 
 ### Time handling
 
-VisionMaster uses a local-time offset convention expressed as:
+This workflow uses:
 
 `Local Time = UTC + Offset`
 
-The viewer follows that convention. For example, with `UTC+03:00` selected, a user selection of `21:30` corresponds to `18:30 UTC` in the log.
+For example, with `UTC+03:00`, a local selection of `21:30` corresponds to `18:30 UTC` in the log.
 
-Both local time and the underlying UTC log timestamp are shown when a track point is inspected.
+Both local and underlying UTC times are shown when a track point is inspected.
 
 ### Exporting DataLog from Sperry Marine VisionMaster FT
 
-On the installation used with this viewer, the practical operator path is:
+On the installation used during development, the practical operator path is:
 
 **System → Diagnostics → DataLog → Export**
 
-Recommended workflow:
+Recommended sequence:
 
-1. Open **System** on the VisionMaster FT display.
+1. Open **System** on VisionMaster FT.
 2. Open **Diagnostics**.
 3. Select **DataLog**.
-4. Select the log interval required for the analysis using the controls available in the installed VisionMaster software revision.
+4. Select the required log interval using the controls available in the installed software revision.
 5. Use **Export** to copy the package to approved removable media or a destination folder.
 6. On the analysis computer, open the exported ZIP directly in the viewer, or extract it and use **CHOOSE FOLDER**.
 
-The VisionMaster FT Ship's Manual confirms that **DataLog** is part of the Diagnostics menu and that DataLog functions are available from the VisionMaster interface. It also documents CCRS logging and the DataLog directory structure. The exact Export control and screen layout may vary with installed software revision and system configuration.
+The VisionMaster FT Ship's Manual documents DataLog under Diagnostics, the CCRS logging configuration and the DataLog directory structure. The exact Export control and screen arrangement can vary by installed revision/configuration.
 
-The manual identifies `C:\Sperry\DataLog` as the default DataLog archive location and lists subfolders including CCRS, Announcement, Chart, Position Sensor and Prompt. CCRS logging is configurable from 1 to 60 seconds, with a documented default interval of 5 seconds.
+The manual identifies `C:\Sperry\DataLog` as the default DataLog archive location and lists subfolders including CCRS, Announcement, Chart, Position Sensor and Prompt. CCRS logging is configurable from 1 to 60 seconds, with a documented default of 5 seconds.
 
-**Removable-media precaution:** the Sperry Marine manual cautions that USB or other external media should be scanned with current antivirus/malware protection before connection to a VisionMaster PC and, where practicable, reserved for VisionMaster use.
+**Removable-media precaution:** follow the vessel/company malware-control procedure before connecting USB or other external media to a VisionMaster PC.
 
 ### Supported source layouts
 
-The viewer accepts, when present:
+When present, the viewer accepts:
 
-- the complete exported outer ZIP package;
+- complete exported outer ZIP packages;
 - a direct `CCRS.zip` package;
-- an extracted outer directory containing `CCRS.zip`, `OwnShipHistoryLog.zip`, `Announcement.zip`, etc.;
+- an extracted directory containing `CCRS.zip`, `OwnShipHistoryLog.zip`, `Announcement.zip`, etc.;
 - fully extracted XML directory trees.
 
-CCRS is required for track display. Other packages are optional and enable additional quality/event information.
+CCRS is required for track display. Other packages are optional.
 
 ### Data-consistency policy
 
-This viewer is intended to present the recorded data without inventing vessel motion.
-
-- No coordinate smoothing is applied to make a discontinuity look realistic.
-- No replacement positions are generated.
-- Short or inconsistent transitions may be flagged as data inconsistencies.
+- No coordinate smoothing is applied to hide discontinuities.
+- No replacement/synthetic positions are generated.
+- Short or physically inconsistent transitions may be flagged.
 - A calculated transition speed is an integrity test between two logged positions, not a claim that the vessel actually achieved that speed.
-- Internally inconsistent segments can be excluded from track-distance calculations and are not drawn as normal vessel motion.
-- A log that is internally consistent but absolutely wrong cannot be corrected without an independent reference source.
+- Internally inconsistent segments can be excluded from track-distance calculations and from normal-motion drawing.
+- A log that is internally self-consistent but absolutely wrong cannot be corrected without an independent reference source.
 
-### Map and network use
+### Print/PDF behaviour
 
-Track/log processing is local. Internet access is required to load OpenStreetMap raster tiles for the basemap and print preparation.
+- Normal and Dense print modes generate A4-landscape layouts.
+- The track is rendered independently of the basemap, so a failed online map does not remove the recorded track from the print.
+- When the online OpenFreeMap path is available, a high-resolution map snapshot is used for print.
+- When it is unavailable, the embedded offline coastline fallback is used instead of waiting indefinitely for broken raster tiles.
+- Browser/OS print services can still affect final PDF size and preparation time.
 
-Map data: © OpenStreetMap contributors.
+### Current limitations / deferred work
 
-### Limitations
+This checkpoint is useful but development is not considered complete. Important deferred items include:
 
-- This is a log-analysis and visualization tool, not a navigation system or an ECDIS replacement.
-- It does not certify the correctness of source sensor data.
+- local detailed PMTiles/offline-map support so a high-resolution basemap can be used without any online provider;
+- further long-log performance work for very large datasets;
+- additional print caching/profiling;
+- further quality/event visualization from OwnShipHistoryLog and Announcement data;
+- broader browser/mobile regression coverage;
+- a cleaner public release/build pipeline.
+
+See [`ROADMAP.md`](ROADMAP.md).
+
+### Safety and operational use
+
+- This is a log-analysis/visualization tool, not an ECDIS or navigation system.
+- It does not certify source sensor accuracy.
 - Fixed UTC offsets are used; daylight-saving rules are not inferred automatically.
-- Browser print/PDF behaviour can vary by operating system and print service.
-- Dense print mode requests higher-zoom map tiles and may take longer to prepare.
-
-### Repository example data
-
-`examples/synthetic_demo_log.zip` is a synthetic, structurally compatible demonstration package. It contains no operational or vessel-derived data and is supplied only for viewer testing and documentation.
+- Map context is for visualization and must not be used as a navigational chart.
+- Operational conclusions should be checked against independent sources and normal bridge/company procedures.
 
 ---
 
 ## Türkçe
 
-### Özellikler
+### İndir
 
-- Tek HTML dosyasıdır; kurulum veya sunucu bileşeni gerektirmez.
+- **Sürüm numaralı v3.15 RC HTML:** [`ECDIS_Log_Track_Viewer_v3.15_RC.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer_v3.15_RC.html)
+- **En güncel public checkpoint kısayolu:** [`ECDIS_Log_Track_Viewer.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer.html)
+- **RC kalite/test notları:** [`docs/QA_v3.15_RC.md`](docs/QA_v3.15_RC.md)
+- **SHA-256 değerleri:** [`SHA256SUMS.txt`](SHA256SUMS.txt)
+
+Sonucun tekrar üretilebilir olması önemliyse sürüm numaralı dosyanın kullanılması tavsiye edilir. Sürümsüz dosya yalnız mevcut public checkpoint'e işaret eden kolaylık kısayoludur.
+
+### Temel özellikler
+
+- Tek HTML dosyasıdır; kurulum veya yerel web sunucusu gerektirmez.
 - Sperry Marine tarafından dışa aktarılan ZIP paketini doğrudan okuyabilir.
 - Açılmış klasör ağacını da okuyabilir.
-- Gemi izinin ana kaynağı olarak CCRS log kayıtlarını kullanır.
-- Log zaman damgalarını UTC kabul eder ve kullanıcının seçtiği sabit UTC ofsetine göre yerel saate dönüştürür.
-- Haritada yalnız seçilen yerel zaman aralığındaki kayıtları gösterir.
-- Varsayılan yerel saat dilimi: `UTC+03:00` (Türkiye).
-- Veri tutarlılığı denetimi için varsayılan azami makul gemi hızı: `16 kn`.
-- Hıza göre renklendirilmiş iz gösterimi.
-- İz üzerindeki bir noktaya tıklayarak/dokunarak yerel saat, UTC log saati, konum, hız ve heading bilgisi görülebilir.
-- Mobilde iki parmakla yakınlaştırma; masaüstünde fare tekerleği ve çift tıklama ile zoom.
-- Mevcutsa OwnShipHistoryLog kalite bilgisi ve Announcement olayları kullanılabilir.
-- Veri tutarlılığı koruması: şüpheli geçişler rota yumuşatılarak gerçekmiş gibi gösterilmez; kaynak koordinatlar değiştirilmez.
+- Gemi izinin ana kaynağı olarak CCRS kayıtlarını kullanır.
+- Varsa OwnShipHistoryLog ve Announcement paketlerini ek kalite/olay bağlamı için kullanabilir.
+- Sabit UTC ofseti ile yerel saat gösterimi; Türkiye için varsayılan `UTC+03:00`.
+- Seçilen zaman aralığına sıkı filtreleme.
+- Hıza göre renklendirilmiş iz.
+- Örneklenen bir iz noktasına tıklayarak/dokunarak yerel saat, UTC log saati, konum, hız ve heading bilgisi.
+- Mobil pinch-zoom ve masaüstü fare tekerleği/çift tıklama desteği.
 - İz mesafesi, süre, ortalama iz hızı, hız aralığı, kayıt boşlukları ve veri denetimi istatistikleri.
 - Normal ve Yoğun A4 yatay baskı seçenekleri.
-- Başlangıç/bitiş etiketleri iz çizgisini kapatmayacak biçimde yerleştirilir.
-- Önerilen PDF dosya adı seçilen yerel tarih-saat aralığından ve varsa operasyon adından üretilir.
-- Kaynak log verisi tarayıcı içinde yerel olarak işlenir; uygulamanın kendisi log paketini bir sunucuya yüklemez.
+- Başlangıç/bitiş etiketleri ve zaman aralığından üretilen PDF dosya adı önerisi.
+- Kaynak log verisi tarayıcı içinde işlenir; uygulamanın kendisi log paketini bir sunucuya yüklemez.
+
+### v3.11–v3.15 RC uzun-log performans çalışmaları
+
+Çok günlük kayıtların tarayıcı sınırlarını göstermesi üzerine mevcut checkpoint'e ayrı bir uzun-log render yolu eklendi.
+
+- 100 bin+ kayıtta `Maximum call stack size exceeded` oluşturabilen büyük-dizi `Math.min(...array)` / `Math.max(...array)` çağrıları kaldırıldı.
+- İstatistikler iteratif hesaplanıyor.
+- Ekran izi, her pan hareketinde baştan kurulmak yerine zoom seviyesine göre cache'lenen `Path2D` geometrisiyle çiziliyor.
+- Pointer-move çizimleri `requestAnimationFrame` ile birleştiriliyor.
+- Yalnız görüntüleme katmanında, aynı/sub-pixel konuma düşen gereksiz vertexleri azaltan LOD uygulanıyor.
+- Baskı izi çok büyük SVG metni üretmek yerine canvas/Path2D ile hazırlanıyor.
+- Harita altlığı gelmese dahi iz ekranda ve baskıda görülebiliyor.
+
+LOD **yalnız render optimizasyonudur**. Ham CCRS kayıtlarını azaltmaz; istatistik/veri denetimi kayıtlarını değiştirmez; rota yumuşatmaz ve yapay konum üretmez.
+
+### Harita mimarisi
+
+`v3.15 RC` üç katmanlı bir yaklaşım kullanır:
+
+1. **Ana ayrıntılı harita:** MapLibre GL JS ile çizilen OpenFreeMap vektör haritası. OpenStreetMap/OpenMapTiles verisi üzerinden yüksek çözünürlüklü yol/yer bağlamı sağlar.
+2. **Offline fallback:** Natural Earth tabanlı hafif dünya kara/kıyı bağlamı; Türkiye/Ege/Karadeniz çevresinde GSHHG kıyı verisiyle bölgesel iyileştirme.
+3. **ECDIS izi:** rota canvas'ı hem online hem offline harita katmanlarının açık biçimde üstünde tutulur.
+
+Offline coastline ana haritanın yerine geçmek için değil, bağlantı/provider sorunu sırasında iz ve coğrafi bağlamın tamamen kaybolmaması için vardır. OpenFreeMap başarılı olduğunda görünür ana altlık odur.
+
+### Neden eski doğrudan OpenStreetMap raster karo yolu değiştirildi?
+
+Önceki sürümlerde standart OpenStreetMap raster tile servisine doğrudan bağlanılıyordu. Uzun kullanım/testlerde `403 Access blocked` karo cevapları görüldü. Bu nedenle uygulama artık gönüllü OSM raster sunucusunu ana harita altyapısı olarak kullanmıyor.
+
+Ayrıntılı online altlık OpenFreeMap/MapLibre yoluyla sağlanıyor. Bu yol çalışmazsa gömülü coastline fallback devrede kalıyor ve ECDIS izi yine gösterilebiliyor/basılabiliyor.
+
+### Varsayılan makul hız eşiği
+
+Varsayılan **Azami makul gemi hızı** artık:
+
+`20 kn`
+
+Bu değer bir gemi performans sertifikası değil, veri tutarlılığı tarama parametresidir. Mevcut çalışma gemisinde akıntı vb. koşullarda 16 kn üzerindeki gerçek gözlemlerin otomatik olarak şüpheli sayılmaması için eski 16 kn varsayılanından 20 kn'a çıkarılmıştır. Kullanıcı gerektiğinde değiştirebilir.
 
 ### Hızlı kullanım
 
-1. `ECDIS_Log_Track_Viewer.html` dosyasını güncel Chrome veya Edge gibi Chromium tabanlı bir tarayıcıda açın.
-2. Dışa aktarılmış log ZIP dosyasını **ZIP SEÇ** ile veya açılmış klasörünü **KLASÖR SEÇ** ile seçin.
-3. Yerel UTC ofsetini seçin. Varsayılan `UTC+03:00`'dır.
-4. İstenen **Başlangıç** ve **Bitiş** zamanlarını seçin. Bu alanlar seçilmiş ofsetteki yerel saat olarak yorumlanır.
+1. `ECDIS_Log_Track_Viewer_v3.15_RC.html` dosyasını güncel Chrome/Edge/Firefox sınıfı bir tarayıcıda açın.
+2. Dışa aktarılmış log ZIP'ini **ZIP SEÇ** ile veya açılmış klasörünü **KLASÖR SEÇ** ile seçin.
+3. Yerel UTC ofsetini seçin. Varsayılan `UTC+03:00`.
+4. Yerel **Başlangıç** ve **Bitiş** saatlerini seçin.
 5. İsterseniz operasyon adı girin.
-6. Gerekirse konum işaret aralığını veya gelişmiş seçenekleri değiştirin.
+6. Gerekirse işaret aralığını veya veri denetimi ayarlarını değiştirin.
 7. **HARİTADA GÖSTER** seçeneğini kullanın.
-8. **YAZDIR** veya **YOĞUN YAZDIR** ile sistem yazdırma penceresini açın ve **A4 / Yatay** seçin.
+8. **YAZDIR** veya **YOĞUN YAZDIR** ile sistem yazdırma penceresini açıp **A4 / Yatay** seçin.
 
 ### Saat mantığı
 
-VisionMaster yerel saat ofsetini şu ilişkiyle tanımlar:
+Bu çalışma hattında:
 
 `Yerel Saat = UTC + Ofset`
 
-Görüntüleyici de aynı mantığı kullanır. Örneğin `UTC+03:00` seçiliyken kullanıcının `21:30` seçimi log içindeki `18:30 UTC` zamanına karşılık gelir.
+Örneğin `UTC+03:00` seçiliyken yerel `21:30`, log içindeki `18:30 UTC` zamanına karşılık gelir.
 
-Bir iz noktası sorgulandığında hem yerel saat hem ham UTC log zamanı birlikte gösterilir.
+Bir iz noktası incelendiğinde hem yerel zaman hem ham UTC log zamanı gösterilir.
 
 ### Sperry Marine VisionMaster FT üzerinden DataLog alma
 
-Bu görüntüleyicinin kullanıldığı sistemde pratik işlem yolu:
+Geliştirme sırasında kullanılan kurulumdaki pratik işlem yolu:
 
 **System → Diagnostics → DataLog → Export**
 
-Önerilen işlem sırası:
+Önerilen sıra:
 
-1. VisionMaster FT ekranında **System** menüsünü açın.
+1. VisionMaster FT üzerinde **System** menüsünü açın.
 2. **Diagnostics** bölümüne girin.
-3. **DataLog** sekmesini seçin.
-4. Kurulu VisionMaster yazılım sürümünde sunulan seçim alanlarıyla gerekli kayıt zaman aralığını belirleyin.
-5. **Export** komutuyla log paketini onaylı bir USB belleğe veya hedef klasöre aktarın.
-6. Analiz bilgisayarında dışa aktarılan ZIP'i doğrudan görüntüleyiciye verin veya ZIP'i açıp **KLASÖR SEÇ** seçeneğini kullanın.
+3. **DataLog** bölümünü seçin.
+4. Kurulu yazılım sürümündeki kontrollerle gerekli kayıt aralığını belirleyin.
+5. **Export** ile paketi onaylı harici ortama/hedef klasöre aktarın.
+6. Analiz bilgisayarında ZIP'i doğrudan viewer'a verin veya açıp **KLASÖR SEÇ** kullanın.
 
-VisionMaster FT Ship's Manual, Diagnostics menüsü altında **DataLog** bulunduğunu ve DataLog işlevlerinin VisionMaster arayüzünden erişilebilir olduğunu doğrulamaktadır. Kılavuz ayrıca CCRS log yapılandırmasını ve DataLog klasör yapısını açıklar. **Export** kontrolünün tam görünümü veya menü yerleşimi, kurulu yazılım sürümüne ve sistem yapılandırmasına göre değişebilir.
+VisionMaster FT Ship's Manual; Diagnostics altında DataLog'u, CCRS kayıt yapılandırmasını ve DataLog klasör yapısını belgeler. Export kontrolünün görünümü ve ekran düzeni kurulu sürüm/yapılandırmaya göre değişebilir.
 
-Kılavuza göre varsayılan DataLog arşiv yolu `C:\Sperry\DataLog` olup CCRS, Announcement, Chart, Position Sensor ve Prompt gibi alt klasörler bulunabilir. CCRS kayıt aralığı 1-60 saniye arasında yapılandırılabilir ve belgelenmiş varsayılan değer 5 saniyedir.
+Kılavuzda varsayılan DataLog yolu `C:\Sperry\DataLog` olarak belirtilir; CCRS, Announcement, Chart, Position Sensor ve Prompt gibi alt klasörler bulunabilir. CCRS kayıt aralığı 1–60 saniye arasında yapılandırılabilir ve belgelenmiş varsayılan 5 saniyedir.
 
-**Harici medya uyarısı:** Sperry Marine kılavuzu, USB veya diğer harici medyanın VisionMaster PC'ye bağlanmadan önce güncel antivirüs/kötücül yazılım taramasından geçirilmesini ve mümkün olduğunca yalnız VisionMaster kullanımı için ayrılmasını tavsiye eder.
+**Harici medya:** USB/harici ortam bağlamadan önce gemi/şirket kötü amaçlı yazılım kontrol prosedürlerini uygulayın.
 
 ### Desteklenen kaynak düzenleri
 
-Mevcut olduğu ölçüde aşağıdaki yapılar desteklenir:
+Mevcut olduğu ölçüde:
 
-- dışa aktarılmış tam ana ZIP paketi;
+- tam dışa aktarılmış ana ZIP;
 - doğrudan `CCRS.zip`;
-- içinde `CCRS.zip`, `OwnShipHistoryLog.zip`, `Announcement.zip` vb. bulunan açılmış ana klasör;
-- tamamen açılmış XML klasör ağaçları.
+- `CCRS.zip`, `OwnShipHistoryLog.zip`, `Announcement.zip` vb. içeren açılmış klasör;
+- tamamen açılmış XML klasör ağaçları
 
-İz gösterimi için CCRS gereklidir. Diğer paketler isteğe bağlıdır ve ek kalite/olay bilgisi sağlar.
+desteklenir.
+
+İz için CCRS gereklidir; diğer paketler isteğe bağlıdır.
 
 ### Veri tutarlılığı ilkesi
 
-Bu araç, kaydı değiştirmeden göstermeyi amaçlar.
+- Süreksizliği saklamak amacıyla koordinat yumuşatması yapılmaz.
+- Yapay/yedek konum üretilmez.
+- Fiziksel olarak tutarsız kısa geçişler işaretlenebilir.
+- İki kayıt arasından hesaplanan geçiş hızı geminin gerçekten bu hızı yaptığı iddiası değil, veri bütünlüğü testidir.
+- Tutarsız segmentler normal hareket gibi çizilmeyebilir ve mesafe hesabından çıkarılabilir.
+- Kendi içinde tutarlı fakat mutlak olarak yanlış bir log, bağımsız referans olmadan düzeltilemez.
 
-- Konum süreksizliklerini gerçekçi göstermek amacıyla koordinat yumuşatması uygulanmaz.
-- Yeni/yapay konum üretilmez.
-- Kısa veya fiziksel olarak tutarsız geçişler veri tutarsızlığı olarak işaretlenebilir.
-- İki kayıt arasından hesaplanan geçiş hızı, geminin gerçekten bu hıza çıktığı iddiası değil, iki log kaydı arasındaki tutarlılık testidir.
-- Tutarsız segmentler normal gemi hareketi gibi çizilmez ve iz mesafesi hesabından çıkarılabilir.
-- Kendi içinde tutarlı fakat mutlak olarak yanlış bir log konumu, bağımsız bir referans kaynağı olmadan düzeltilemez.
+### Baskı/PDF davranışı
 
-### Harita ve ağ kullanımı
+- Normal ve Yoğun baskı A4 yatay çıktı üretir.
+- İz, harita altlığından bağımsız çizilir; online harita başarısız olduğunda rota baskıdan kaybolmaz.
+- OpenFreeMap yolu hazırsa baskıda yüksek çözünürlüklü harita snapshot'ı kullanılır.
+- Online yol kullanılamıyorsa eski 403 raster karo mozağini beklemek yerine gömülü offline coastline devreye girer.
+- Son PDF boyutu ve hazırlama süresi tarayıcı/işletim sistemi yazdırma servisine göre değişebilir.
 
-Log ve rota işleme yereldir. OpenStreetMap raster harita parçalarının gösterilmesi ve baskıya hazırlanması için internet bağlantısı gerekir.
+### Mevcut sınırlamalar / tehir edilen işler
 
-Harita verisi: © OpenStreetMap contributors.
+Bu checkpoint kullanışlıdır ancak geliştirme bitmiş sayılmamaktadır. Özellikle:
 
-### Sınırlamalar
+- internet/provider bağımlılığı olmadan ayrıntılı harita sağlayacak yerel PMTiles desteği;
+- çok daha büyük loglarda ilave performans çalışmaları;
+- baskı cache/profiling iyileştirmeleri;
+- OwnShipHistoryLog ve Announcement verilerinin daha zengin kalite/olay katmanları;
+- daha geniş mobil/tarayıcı regresyon testleri;
+- daha temiz, sürüm-izli public build/release zinciri
 
-- Seyir sistemi veya ECDIS yerine kullanılmaz; log inceleme ve görselleştirme aracıdır.
+sonraki çalışma için saklanmıştır.
+
+Bkz. [`ROADMAP.md`](ROADMAP.md).
+
+### Emniyet / operasyonel kullanım
+
+- Bu araç ECDIS veya seyir sistemi değildir; log analiz/görselleştirme aracıdır.
 - Kaynak sensör verisinin doğruluğunu garanti etmez.
-- Sabit UTC ofseti kullanılır; yaz/kış saati kuralları otomatik uygulanmaz.
-- Tarayıcı ve işletim sistemine göre yazdırma/PDF davranışı değişebilir.
-- Yoğun baskı daha yüksek zoom seviyesindeki harita parçalarını istediği için daha uzun hazırlanabilir.
-
-### Depodaki örnek veri
-
-`examples/synthetic_demo_log.zip` tamamen sentetik ve görüntüleyiciyle yapısal olarak uyumlu bir test paketidir. Operasyonel veya gerçek gemi verisi içermez; yalnız test ve dokümantasyon amacıyla sunulur.
+- Sabit UTC ofseti kullanır; yaz/kış saati kurallarını otomatik çıkarmaz.
+- Harita altlığı seyir haritası değildir.
+- Operasyonel çıkarımlar bağımsız kaynaklarla ve normal köprüüstü/şirket prosedürleriyle doğrulanmalıdır.
 
 ---
 
 ## Reference / Kaynakça
 
-Northrop Grumman Sperry Marine B.V. (2014). *VisionMaster FT Ship's Manual, Volume 2: Configuration & Commissioning* (Part No. 65900011V2-12, Rev. A). Relevant sections include Chapter 2 Diagnostics, Section 8.4.4 CCRS Data Log, Section 8.5.2 Data Log, and Section 8.5.4 Data Location.
+Northrop Grumman Sperry Marine B.V. (2014). *VisionMaster FT Ship's Manual, Volume 2: Configuration & Commissioning* (Part No. 65900011V2-12, Rev. A).
 
-The Sperry Marine manual itself is not distributed with this repository.
+Relevant sections include Diagnostics, CCRS Data Log, Data Log and Data Location. The manual itself is **not** distributed in this repository.
+
+Third-party map/data notices are documented in [`NOTICE.md`](NOTICE.md).
