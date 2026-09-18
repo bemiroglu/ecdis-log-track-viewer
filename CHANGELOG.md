@@ -1,5 +1,25 @@
 # Changelog / Değişiklik Kaydı
 
+## v3.16 RC
+
+### English
+
+- Restored the canonical public application as the direct, readable single-file HTML instead of the earlier compressed/reconstruction wrapper.
+- Corrected Dense Print basemap preparation: detailed OpenFreeMap/MapLibre output is now captured as a four-part 2×2 mosaic and assembled into the 2400×1297 print basemap, reducing failures caused by one oversized off-screen WebGL render target.
+- Added stronger MapLibre readiness checks for print capture while retaining the embedded Natural Earth/GSHHG coastline fallback.
+- Preserved v3.15 parser, UTC/fixed-offset handling, data-integrity guard, screen-track rendering, long-log LOD/cache and Normal Print behavior.
+- Updated public distribution instructions: GitHub repository ZIP is the recommended download path when browsers do not save raw HTML reliably; versioned and latest direct HTML links are retained.
+- Canonical and versioned HTML SHA-256: `8c5fe385f390a4a283534b01a764ca86f2b1cb06f8e0344cfa25ceb2244664ed`.
+
+### Türkçe
+
+- Canonical public uygulama, önceki sıkıştırılmış/reconstruction wrapper yerine doğrudan okunabilir tek HTML çalışan uygulama olarak geri getirildi.
+- Yoğun Baskı altlık hazırlığı düzeltildi: ayrıntılı OpenFreeMap/MapLibre görüntüsü artık tek ve çok büyük bir off-screen WebGL hedefinde değil, dört parçalı 2×2 mozaik olarak hazırlanıp 2400×1297 baskı altlığında birleştiriliyor.
+- Baskı yakalamalarında MapLibre readiness kontrolleri güçlendirildi; gömülü Natural Earth/GSHHG coastline fallback korunuyor.
+- v3.15 parser, UTC/sabit-ofset mantığı, veri bütünlüğü koruması, ekran izi, uzun-log LOD/cache ve Normal Baskı davranışı korundu.
+- Public dağıtım yönergeleri güncellendi: browser'ların raw HTML dosyasını güvenilir biçimde indirmediği durumlar için GitHub repository ZIP arşivi önerilen yol haline getirildi; sürüm numaralı ve latest doğrudan HTML bağlantıları korunuyor.
+- Canonical ve sürüm numaralı HTML SHA-256: `8c5fe385f390a4a283534b01a764ca86f2b1cb06f8e0344cfa25ceb2244664ed`.
+
 ## v3.15 RC
 
 ### English
