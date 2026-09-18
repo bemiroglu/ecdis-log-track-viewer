@@ -2,9 +2,11 @@
 
 A single-file HTML5 viewer for selected own-ship track intervals exported from Sperry Marine VisionMaster FT ECDIS log packages.
 
-**Current public development checkpoint: `v3.15 RC`**
+**Current public development checkpoint: `v3.16 RC`**
 
-> `v3.15 RC` is intentionally published as a release candidate/checkpoint, not as a declaration that development is finished. The long-log rendering, high-resolution basemap, fallback-map and print-path work described below has reached a useful verified state, while further improvements remain deferred in `ROADMAP.md`.
+> `v3.16 RC` is intentionally published as a release candidate/checkpoint, not as a declaration that development is finished. The long-log rendering, high-resolution basemap, fallback-map and print-path work described below has reached a useful verified state, while further improvements remain deferred in `ROADMAP.md`.
+
+**v3.16 RC publication note:** the canonical public HTML has been restored to the direct working single-file application. Dense Print now prepares the detailed OpenFreeMap basemap as a four-part 2×2 MapLibre mosaic instead of relying on one oversized off-screen WebGL capture; the embedded coastline fallback remains available if the online detailed map cannot be prepared.
 
 The application runs locally in the browser. It reads an exported ZIP package or an extracted log folder, treats the observed CCRS log timestamps as UTC for this workflow, converts them to a user-selected fixed UTC offset, displays the selected interval, performs internal consistency checks, and produces A4 landscape print/PDF output.
 
@@ -16,12 +18,24 @@ The viewer does **not** smooth or invent vessel positions to make a problematic 
 
 ### Download
 
-- **Versioned v3.15 RC HTML:** [`ECDIS_Log_Track_Viewer_v3.15_RC.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer_v3.15_RC.html)
-- **Latest public checkpoint alias:** [`ECDIS_Log_Track_Viewer.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer.html)
-- **Release-candidate QA notes:** [`docs/QA_v3.15_RC.md`](docs/QA_v3.15_RC.md)
-- **Checksums:** [`SHA256SUMS.txt`](SHA256SUMS.txt)
+**Recommended: download the repository ZIP.** This avoids the raw-HTML download problems seen with some browsers.
 
-The versioned file is the preferred reference when results need to be reproducible. The unversioned file is only a convenience alias to the current public checkpoint.
+- **ZIP package / complete repository archive:** [Download main.zip](https://github.com/bemiroglu/ecdis-log-track-viewer/archive/refs/heads/main.zip)
+  - Extract the ZIP.
+  - Open `ECDIS_Log_Track_Viewer.html` in a current Chrome, Edge or Firefox-class browser.
+  - The archive also contains this README, CHANGELOG, QA notes and checksums.
+
+**Direct HTML alternatives:**
+
+- **Versioned v3.16 RC HTML:** [ECDIS_Log_Track_Viewer_v3.16_RC.html](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer_v3.16_RC.html)
+- **Latest public checkpoint alias:** [ECDIS_Log_Track_Viewer.html](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer.html)
+- **Bilingual download/use note:** [DOWNLOAD_README_TR-EN.txt](DOWNLOAD_README_TR-EN.txt)
+- **Release-candidate QA notes:** [docs/QA_v3.16_RC.md](docs/QA_v3.16_RC.md)
+- **Checksums:** [SHA256SUMS.txt](SHA256SUMS.txt)
+
+GitHub/raw handling of `.html` varies by browser. A raw HTML URL can be shown as source text instead of being downloaded, and some browsers do not offer a reliable “Save link as…” action. **For ordinary users, the repository ZIP above is the recommended path.** It is a standard GitHub-generated ZIP and includes the direct working HTML plus the bilingual instructions.
+
+The canonical v3.16 RC files in this repository are now the **direct readable HTML application**, not the earlier compressed/reconstruction wrapper.
 
 ### Main capabilities
 
@@ -40,7 +54,7 @@ The versioned file is the preferred reference when results need to be reproducib
 - Start/end labels and suggested PDF filenames derived from the selected interval.
 - Browser-local log processing; the application itself does not upload the log package to a server.
 
-### Long-log performance work in v3.11–v3.15 RC
+### Long-log performance work in v3.11–v3.16 RC
 
 The current checkpoint includes a dedicated long-log rendering path developed after multi-day datasets exposed browser limits.
 
@@ -56,7 +70,7 @@ The LOD layer is a **rendering optimization only**. It does not rewrite the log,
 
 ### Map architecture
 
-`v3.15 RC` uses a layered basemap strategy:
+`v3.16 RC` uses a layered basemap strategy:
 
 1. **Primary detailed basemap:** OpenFreeMap vector map rendered with MapLibre GL JS. The map data is based on OpenStreetMap/OpenMapTiles data and provides the high-resolution road/place context expected from an OSM-style map.
 2. **Offline fallback:** a lightweight embedded coastline/land context based on Natural Earth, with regional GSHHG coastline refinement for Turkish/Aegean/Black Sea waters.
@@ -146,7 +160,7 @@ CCRS is required for track display. Other packages are optional.
 
 - Normal and Dense print modes generate A4-landscape layouts.
 - The track is rendered independently of the basemap, so a failed online map does not remove the recorded track from the print.
-- When the online OpenFreeMap path is available, a high-resolution map snapshot is used for print.
+- When the online OpenFreeMap path is available, Normal Print uses a high-resolution snapshot and Dense Print uses a 2×2 high-resolution MapLibre/OpenFreeMap mosaic to reduce oversized off-screen WebGL capture failures.
 - When it is unavailable, the embedded offline coastline fallback is used instead of waiting indefinitely for broken raster tiles.
 - Browser/OS print services can still affect final PDF size and preparation time.
 
@@ -177,12 +191,24 @@ See [`ROADMAP.md`](ROADMAP.md).
 
 ### İndir
 
-- **Sürüm numaralı v3.15 RC HTML:** [`ECDIS_Log_Track_Viewer_v3.15_RC.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer_v3.15_RC.html)
-- **En güncel public checkpoint kısayolu:** [`ECDIS_Log_Track_Viewer.html`](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer.html)
-- **RC kalite/test notları:** [`docs/QA_v3.15_RC.md`](docs/QA_v3.15_RC.md)
-- **SHA-256 değerleri:** [`SHA256SUMS.txt`](SHA256SUMS.txt)
+**Önerilen yöntem: repository ZIP dosyasını indirin.** Bu yöntem bazı browser'larda görülen raw-HTML indirme sorunlarını önler.
 
-Sonucun tekrar üretilebilir olması önemliyse sürüm numaralı dosyanın kullanılması tavsiye edilir. Sürümsüz dosya yalnız mevcut public checkpoint'e işaret eden kolaylık kısayoludur.
+- **ZIP paketi / tüm repository arşivi:** [main.zip dosyasını indir](https://github.com/bemiroglu/ecdis-log-track-viewer/archive/refs/heads/main.zip)
+  - ZIP'i normal bir klasöre çıkarın.
+  - İçindeki `ECDIS_Log_Track_Viewer.html` dosyasını güncel Chrome, Edge veya Firefox sınıfı bir browser ile açın.
+  - Arşiv README, CHANGELOG, QA notları ve checksum dosyasını da içerir.
+
+**Doğrudan HTML seçenekleri:**
+
+- **Sürüm numaralı v3.16 RC HTML:** [ECDIS_Log_Track_Viewer_v3.16_RC.html](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer_v3.16_RC.html)
+- **En güncel public checkpoint kısayolu:** [ECDIS_Log_Track_Viewer.html](https://raw.githubusercontent.com/bemiroglu/ecdis-log-track-viewer/main/ECDIS_Log_Track_Viewer.html)
+- **Türkçe/İngilizce indirme-kullanım notu:** [DOWNLOAD_README_TR-EN.txt](DOWNLOAD_README_TR-EN.txt)
+- **RC kalite/test notları:** [docs/QA_v3.16_RC.md](docs/QA_v3.16_RC.md)
+- **SHA-256 değerleri:** [SHA256SUMS.txt](SHA256SUMS.txt)
+
+GitHub/raw `.html` dosyalarının davranışı browser'a göre değişebilir. Bazı browser'lar dosyayı indirmek yerine kaynak metin olarak gösterebilir veya “Bağlantıyı farklı kaydet” işlemini güvenilir biçimde sunmayabilir. **Bu nedenle normal kullanıcı için yukarıdaki GitHub ZIP arşivi önerilir.** ZIP, doğrudan çalışan HTML dosyasını ve Türkçe/İngilizce açıklama notlarını birlikte içerir.
+
+Repository'deki canonical v3.16 RC dosyaları artık önceki sıkıştırılmış/reconstruction wrapper yerine **doğrudan okunabilir çalışan HTML uygulamasıdır**.
 
 ### Temel özellikler
 
@@ -201,7 +227,7 @@ Sonucun tekrar üretilebilir olması önemliyse sürüm numaralı dosyanın kull
 - Başlangıç/bitiş etiketleri ve zaman aralığından üretilen PDF dosya adı önerisi.
 - Kaynak log verisi tarayıcı içinde işlenir; uygulamanın kendisi log paketini bir sunucuya yüklemez.
 
-### v3.11–v3.15 RC uzun-log performans çalışmaları
+### v3.11–v3.16 RC uzun-log performans çalışmaları
 
 Çok günlük kayıtların tarayıcı sınırlarını göstermesi üzerine mevcut checkpoint'e ayrı bir uzun-log render yolu eklendi.
 
@@ -217,7 +243,7 @@ LOD **yalnız render optimizasyonudur**. Ham CCRS kayıtlarını azaltmaz; istat
 
 ### Harita mimarisi
 
-`v3.15 RC` üç katmanlı bir yaklaşım kullanır:
+`v3.16 RC` üç katmanlı bir yaklaşım kullanır:
 
 1. **Ana ayrıntılı harita:** MapLibre GL JS ile çizilen OpenFreeMap vektör haritası. OpenStreetMap/OpenMapTiles verisi üzerinden yüksek çözünürlüklü yol/yer bağlamı sağlar.
 2. **Offline fallback:** Natural Earth tabanlı hafif dünya kara/kıyı bağlamı; Türkiye/Ege/Karadeniz çevresinde GSHHG kıyı verisiyle bölgesel iyileştirme.
@@ -307,7 +333,7 @@ desteklenir.
 
 - Normal ve Yoğun baskı A4 yatay çıktı üretir.
 - İz, harita altlığından bağımsız çizilir; online harita başarısız olduğunda rota baskıdan kaybolmaz.
-- OpenFreeMap yolu hazırsa baskıda yüksek çözünürlüklü harita snapshot'ı kullanılır.
+- OpenFreeMap yolu hazırsa Normal baskıda yüksek çözünürlüklü snapshot; Yoğun baskıda ise büyük tek WebGL yüzeyi yerine 2×2 yüksek çözünürlüklü MapLibre/OpenFreeMap mozaik altlığı kullanılır.
 - Online yol kullanılamıyorsa eski 403 raster karo mozağini beklemek yerine gömülü offline coastline devreye girer.
 - Son PDF boyutu ve hazırlama süresi tarayıcı/işletim sistemi yazdırma servisine göre değişebilir.
 
