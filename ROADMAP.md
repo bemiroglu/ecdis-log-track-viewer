@@ -1,8 +1,8 @@
 # Roadmap / Tehir Edilen Geliştirmeler
 
-This file records work intentionally deferred after the `v3.15 RC` public checkpoint so that the current gains and development direction are not lost.
+This file records work intentionally deferred after the `v3.16 RC` public checkpoint so that the current gains and development direction are not lost.
 
-Bu dosya, `v3.15 RC` public checkpoint sonrasında bilinçli olarak tehir edilen işleri kaydeder; amaç mevcut kazanımları ve geliştirme rotasını kaybetmemektir.
+Bu dosya, `v3.16 RC` public checkpoint sonrasında bilinçli olarak tehir edilen işleri kaydeder; amaç mevcut kazanımları ve geliştirme rotasını kaybetmemektir.
 
 ---
 
@@ -22,7 +22,7 @@ Target behaviour:
 
 ### Priority 2 — Further long-log performance
 
-`v3.15 RC` already removes the call-stack failure and uses zoom-level Path2D caching plus display-only LOD. Further work should focus on:
+`v3.16 RC` already removes the call-stack failure and uses zoom-level Path2D caching plus display-only LOD. Further work should focus on:
 
 - moving heavy parsing/geometry preparation to Web Workers;
 - incremental parsing for very large ZIP/XML datasets;
@@ -33,6 +33,8 @@ Target behaviour:
 Source records and full-data statistics must remain untouched by visual LOD.
 
 ### Priority 3 — Print/PDF performance and fidelity
+
+v3.16 RC adds a four-part Dense Print OpenFreeMap/MapLibre mosaic capture to avoid one oversized WebGL render target. Remaining work:
 
 - cache reusable basemap snapshots;
 - avoid unnecessary re-render if viewport/zoom has not changed;
@@ -99,7 +101,7 @@ Hedef davranış:
 
 ### Öncelik 2 — Uzun log performansını daha ileri taşımak
 
-`v3.15 RC` call-stack hatasını kaldırmış, zoom-bazlı Path2D cache ve yalnız görüntüleme katmanında LOD kullanmaktadır. Sonraki çalışma:
+`v3.16 RC` call-stack hatasını kaldırmış, zoom-bazlı Path2D cache ve yalnız görüntüleme katmanında LOD kullanmaktadır. Sonraki çalışma:
 
 - ağır parse/geometri işlerini Web Worker'a taşımak;
 - çok büyük ZIP/XML veri setlerinde incremental parsing;
@@ -112,6 +114,8 @@ Hedef davranış:
 Görsel LOD ham kayıtları veya tam-veri istatistiklerini değiştirmemelidir.
 
 ### Öncelik 3 — Baskı/PDF performansı ve doğruluğu
+
+v3.16 RC, tek ve çok büyük WebGL render hedefinden kaçınmak için Yoğun Baskıda dört parçalı OpenFreeMap/MapLibre mozaik yakalama ekler. Kalan işler:
 
 - tekrar kullanılabilir basemap snapshot cache;
 - viewport/zoom değişmediyse gereksiz yeniden render yapmama;
