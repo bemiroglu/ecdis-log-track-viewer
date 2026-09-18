@@ -10,7 +10,7 @@ ECDIS Log Track Viewer is an independent log-analysis utility. It is not an offi
 
 ### Detailed online basemap
 
-The `v3.15 RC` detailed online basemap uses **OpenFreeMap** rendered through **MapLibre GL JS**. OpenFreeMap styles/data attribution displayed by the application includes:
+The `v3.16 RC` detailed online basemap uses **OpenFreeMap** rendered through **MapLibre GL JS**. OpenFreeMap styles/data attribution displayed by the application includes:
 
 - OpenFreeMap
 - © OpenMapTiles
@@ -63,7 +63,7 @@ ECDIS Log Track Viewer bağımsız bir log analiz aracıdır. Resmî Sperry Mari
 
 ### Ayrıntılı online harita altlığı
 
-`v3.15 RC` ayrıntılı online harita altlığı **MapLibre GL JS** üzerinden **OpenFreeMap** kullanır. Uygulamada gösterilen atıf zinciri şunları içerir:
+`v3.16 RC` ayrıntılı online harita altlığı **MapLibre GL JS** üzerinden **OpenFreeMap** kullanır. Uygulamada gösterilen atıf zinciri şunları içerir:
 
 - OpenFreeMap
 - © OpenMapTiles
